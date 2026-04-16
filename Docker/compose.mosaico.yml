@@ -1,0 +1,44 @@
+name: "mosaico"
+services:
+
+  database:
+    image: postgres:18
+    container_name: postgres
+    hostname: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password 
+      POSTGRES_DB: mosaico
+    networks:
+      - mosaico
+    volumes:
+      - pg-data:/var/lib/postgresql
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U  postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mosaicod:
+    image: ghcr.io/mosaico-labs/mosaicod
+    container_name: mosaicod
+    networks:
+      - mosaico
+    environment: 
+      MOSAICOD_DB_URL: postgresql://postgres:password@db:5432/mosaico
+    volumes:
+      - mosaico-data:/data
+    command: | 
+      run --host 0.0.0.0 --port 6726 --log-level info --local-store /data 
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:6726:6726" 
+
+volumes:
+  pg-data:
+  mosaico-data:
+
+networks:
+  mosaico:

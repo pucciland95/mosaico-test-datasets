@@ -1,0 +1,26 @@
+[project]
+name = "mosaico-test-datasets"
+version = "0.1.0"
+description = "This package contains scripts to test ROS datasets with Mosaico Platform"
+authors = [
+    {name = "Pucciland95",email = "niccolo.lucci@mosaico.dev"}
+]
+requires-python = ">=3.13, <4"
+dependencies = [
+    "mosaicolabs",
+    "click (>=8.3.2,<9.0.0)"
+]
+
+[project.scripts]
+"mosaicolabs.datasets.injest_rosbags" = "Datasets.cli:run_dataset_injestor"
+
+[tool.poetry]
+packages = [{include = "Datasets"}]
+
+[tool.poetry.dependencies]
+mosaicolabs = {path = "mosaico/mosaico-sdk-py", develop = true}
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
