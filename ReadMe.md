@@ -107,18 +107,22 @@ The CLI entry-point is registered by Poetry as
 poetry run mosaicolabs.datasets.injest_rosbags --help
 
 # Inject a single dataset
-poetry run mosaicolabs.datasets.injest_rosbags --autoware
-poetry run mosaicolabs.datasets.injest_rosbags --sugarbeets
-poetry run mosaicolabs.datasets.injest_rosbags --uzh_fpv
+poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware
+poetry run mosaicolabs.datasets.injest_rosbags --dataset sugarbeets
+poetry run mosaicolabs.datasets.injest_rosbags --dataset uzh_fpv
 
-# Inject all datasets in one go
+# Inject multiple datasets in one go
+poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware --dataset sugarbeets
+
+# Inject all datasets
 poetry run mosaicolabs.datasets.injest_rosbags --load_all
 ```
 
-Multiple flags can be combined:
+Use `--n_bags_to_load` to limit how many bags are injected per dataset — useful
+for smoke-testing without waiting for a full ingest:
 
 ```bash
-poetry run mosaicolabs.datasets.injest_rosbags --autoware --sugarbeets
+poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware --n_bags_to_load 3
 ```
 
 ### Configuration Keys
@@ -183,10 +187,9 @@ from `Datasets/configs.py`.
 
 ### 3. Register the dataset in the CLI
 
-Open `Datasets/cli.py` and make the following two changes:
-
-**a) Add an entry to `AVAILABLE_DATASET_MAP`** — the key is the CLI flag name
-(lowercase, underscores), the value is the exact folder name:
+Open `Datasets/cli.py` and add one entry to `AVAILABLE_DATASET_MAP` — the key
+is the name passed to `--dataset` (lowercase, underscores), the value is the
+exact folder name:
 
 ```python
 AVAILABLE_DATASET_MAP = {
@@ -197,15 +200,7 @@ AVAILABLE_DATASET_MAP = {
 }
 ```
 
-**b) Add a `@click.option` flag** and handle it inside `run_dataset_injestor`:
-
-```python
-@click.option("--mydataset", is_flag=True, help="Loads the MyDataset dataset.")
-def run_dataset_injestor(autoware, sugarbeets, uzh_fpv, mydataset, load_all):
-    ...
-    if mydataset:
-        datasets_to_load.append(AVAILABLE_DATASET_MAP["mydataset"])
-```
+That's all. The CLI picks up the new entry automatically via `click.Choice`.
 
 ### 4. (Optional) Add a download script
 
@@ -222,9 +217,9 @@ with resume support and a success/failure summary.
 ### 5. Verify the setup
 
 ```bash
-# Check the new dataset appears in --help
+# Check the new dataset appears in --help (it should be listed under --dataset choices)
 poetry run mosaicolabs.datasets.injest_rosbags --help
 
-# Run a dry-run by pointing PATH_TO_BAGS at a folder with at least one bag
-poetry run mosaicolabs.datasets.injest_rosbags --mydataset
+# Smoke-test with a single bag
+poetry run mosaicolabs.datasets.injest_rosbags --dataset mydataset --n_bags_to_load 1
 ```

@@ -7,8 +7,8 @@ authors = [
 ]
 requires-python = ">=3.13, <4"
 dependencies = [
-    "mosaicolabs",
-    "click (>=8.3.2,<9.0.0)"
+    "click (>=8.3.2,<9.0.0)",
+    "rich (>=15.0.0,<16.0.0)"
 ]
 
 [project.scripts]

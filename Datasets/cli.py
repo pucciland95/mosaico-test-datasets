@@ -13,32 +13,27 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--autoware", is_flag=True, help="Loads the Autoware dataset.")
-@click.option("--sugarbeets", is_flag=True, help="Loads the SugarBeets dataset.")
-@click.option("--uzh_fpv", is_flag=True, help="Loads the UZH_FPV dataset.")
+@click.option(
+    "--dataset",
+    "datasets",
+    multiple=True,
+    type=click.Choice(list(AVAILABLE_DATASET_MAP.keys()), case_sensitive=False),
+    help="Dataset to load. Can be repeated to select multiple datasets.",
+)
 @click.option("--load_all", is_flag=True, help="Loads all defined datasets.")
-def run_dataset_injestor(autoware, sugarbeets, uzh_fpv, load_all):
+@click.option("--n_bags_to_load", default=None, type=int, help="Number of bags to upload per dataset. Omit to load all available bags.")
+def run_dataset_injestor(datasets, load_all, n_bags_to_load):
     """
     Mosaico dataset loader Runner
 
     This utility allows you to start rosbags dataset injestion
     """
-    datasets_to_load: list[str] = []
-
     if load_all:
         datasets_to_load = list(AVAILABLE_DATASET_MAP.values())
-
     else:
-        if autoware:
-            datasets_to_load.append(AVAILABLE_DATASET_MAP["autoware"])
+        datasets_to_load = [AVAILABLE_DATASET_MAP[d] for d in datasets]
 
-        if sugarbeets:
-            datasets_to_load.append(AVAILABLE_DATASET_MAP["sugarbeets"])
-
-        if uzh_fpv:
-            datasets_to_load.append(AVAILABLE_DATASET_MAP["uzh_fpv"])
-
-    if len(datasets_to_load) <= 0:
+    if not datasets_to_load:
         click.secho(
             "No datasets to injest requested. Please run the command with --help to see all available  Datasets",
             fg="cyan",
@@ -51,7 +46,7 @@ def run_dataset_injestor(autoware, sugarbeets, uzh_fpv, load_all):
     )
 
     try:
-        injestor = RosDatasetsInjestor(datasets_to_load)
+        injestor = RosDatasetsInjestor(datasets_to_load, n_bags_to_load)
         injestor.load_datasets()
     except Exception as e:
         click.secho(f"\nExecution failed: {e}", fg="red", bold=True)
