@@ -19,7 +19,7 @@ Typical usage::
 """
 
 # Mosaico SDK Imports
-from mosaicolabs import Time, SessionLevelErrorPolicy
+from mosaicolabs import Time, SessionLevelErrorPolicy, MosaicoClient
 from mosaicolabs.ros_bridge import RosbagInjector, ROSInjectionConfig
 from mosaicolabs.ros_bridge.loader import ROSLoader
 
@@ -57,14 +57,23 @@ class RosDatasetsInjestor:
         "TLS_CERT_PATH",
     ]
 
-    def __init__(self, datasets_name_to_load: Optional[list[str]] = None):
+    def __init__(
+        self,
+        datasets_name_to_load: Optional[list[str]] = None,
+        n_bags_to_load: Optional[int] = None,
+    ):
         """Initialise the injector, discover datasets, and load global config.
 
         Args:
             datasets_name_to_load (list[str] | None): Optional whitelist of
                 dataset folder names to process.  When ``None`` (default) all
                 discovered datasets are loaded.
+            n_bags_to_load (int | None): Optional number stating how many rosbags
+            should be uploaded for each dataset. When ``None``, all rosbags
+            for each dataset are loaded.
         """
+
+        self.n_bags_to_load_ = n_bags_to_load
 
         abs_path_to_this_file = Path(__file__).resolve().parent
 
@@ -187,6 +196,9 @@ class RosDatasetsInjestor:
 
         return config
 
+    def _get_name_from_rosbag(self, rosbag_path: Path) -> str:
+        return rosbag_path.with_suffix("").name
+
     def load_datasets(self) -> None:
         """Ingest all discovered datasets into Mosaico.
 
@@ -219,30 +231,54 @@ class RosDatasetsInjestor:
 
             if not ros_bag_paths:
                 console.print(
-                    f"[bold yellow] No rosbags found at path {configs["PATH_TO_BAGS"]}. Skipping this... [/bold yellow]"
+                    f"[bold yellow]No rosbags found at path {configs['PATH_TO_BAGS']}. Skipping this... [/bold yellow]"
                 )
                 continue
 
-            # 2) Injesting rosbags
-            for bag_path in ros_bag_paths:
+            # 2) Get already loaded sequences so to avoid loading them again
+            all_loaded_sequences = []
+            with MosaicoClient.connect(
+                host=configs["MOSAICO_HOST"],
+                port=configs["MOSAICO_PORT"],
+                api_key=configs["API_KEY"],
+                enable_tls=configs["ENABLE_TLS"],
+            ) as client:
+                all_loaded_sequences.extend(client.list_sequences())
+
+            filtered_rosbags = [
+                bag_pt
+                for bag_pt in ros_bag_paths
+                if self._get_name_from_rosbag(bag_pt) not in all_loaded_sequences
+            ]
+
+            if self.n_bags_to_load_ is not None:
+                filtered_rosbags = filtered_rosbags[: self.n_bags_to_load_]
+
+            console.print(
+                f"[bold green]Loading {len(filtered_rosbags)} from {len(ros_bag_paths)} found bags from {configs['PATH_TO_BAGS']} [/bold green]"
+            )
+
+            # 3) Injesting rosbags
+            loaded_bags = 0
+            for bag_path in filtered_rosbags:
                 if not bag_path.is_file():
                     console.print(
-                        f"[bold red]{bag_path} is not a rosbag file. Skipping injestion[/bold red]"
+                        f"[bold yellow]{bag_path} is not a rosbag file. Skipping injestion[/bold yellow]"
                     )
                     continue
 
-                bag_name = bag_path.with_suffix("").name
+                sequence_name = self._get_name_from_rosbag(bag_path)
 
                 injestor_config = ROSInjectionConfig(
                     file_path=bag_path,
-                    sequence_name=bag_name,
+                    sequence_name=sequence_name,
                     metadata={
-                        "name": bag_name,
+                        "name": sequence_name,
                         "downloaded_time_ns": Time.now().to_nanoseconds(),
                     },
                     host=configs["MOSAICO_HOST"],
                     port=configs["MOSAICO_PORT"],
-                    log_level="INFO",
+                    log_level="WARNING",
                     topics=configs["TOPICS_TO_FILTER"],
                     ros_distro=configs["ROS_DISTRO"],
                     on_error=SessionLevelErrorPolicy.Delete,
@@ -252,7 +288,7 @@ class RosDatasetsInjestor:
                 )
 
                 console.print(
-                    f"[bold green]Starting ROS injestion {injestor_config.sequence_name} - Size (MB): {bag_path.stat().st_size / (1024 * 1024):.2f}[/bold green]"
+                    f"[bold green]Starting ROS injestion {injestor_config.sequence_name} - Size (MB): {bag_path.stat().st_size / (1024 * 1024):.2f} - bag number {loaded_bags + 1}/{len(filtered_rosbags)} [/bold green]"
                 )
 
                 injestor = RosbagInjector(injestor_config)
@@ -263,8 +299,9 @@ class RosDatasetsInjestor:
                     console.print(f"[bold red]Injection Failed:[/bold red] {e}")
                     continue
 
+                loaded_bags += 1
                 console.print(
-                    f"[bold green]Finished ROS injestion {injestor_config.sequence_name} [/bold green]"
+                    f"[bold green]Finished ROS injestion {injestor_config.sequence_name} of {loaded_bags}/{len(filtered_rosbags)} [/bold green]"
                 )
 
             console.print(
