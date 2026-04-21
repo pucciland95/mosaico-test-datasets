@@ -13,13 +13,13 @@ dependencies = [
 
 [project.scripts]
 "mosaicolabs.datasets.injest_rosbags" = "Datasets.cli:run_dataset_injestor"
+"mosaicolabs.datasets.delete_rosbags" = "Datasets.cli:run_dataset_eraser"
 
 [tool.poetry]
 packages = [{include = "Datasets"}]
 
 [tool.poetry.dependencies]
-mosaicolabs = {path = "mosaico/mosaico-sdk-py", develop = true}
-
+mosaicolabs = {path="./mosaico/mosaico-sdk-py", develop=true}
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

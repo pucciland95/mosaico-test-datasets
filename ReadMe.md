@@ -15,6 +15,7 @@ different ROS distributions and robot platforms.
 - [Installation](#installation)
 - [Running Mosaico Locally](#running-mosaico-locally)
 - [Loading Datasets](#loading-datasets)
+- [Pruning Datasets](#pruning-datasets)
 - [Adding a New Dataset](#adding-a-new-dataset)
 
 ---
@@ -118,11 +119,11 @@ poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware --dataset suga
 poetry run mosaicolabs.datasets.injest_rosbags --load_all
 ```
 
-Use `--n_bags_to_load` to limit how many bags are injected per dataset — useful
+Use `--n_bags` to limit how many bags are injected per dataset — useful
 for smoke-testing without waiting for a full ingest:
 
 ```bash
-poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware --n_bags_to_load 3
+poetry run mosaicolabs.datasets.injest_rosbags --dataset autoware --n_bags 3
 ```
 
 ### Configuration Keys
@@ -142,6 +143,42 @@ are recognised:
 
 Global defaults live in `Datasets/configs.py`. Any key defined in a
 dataset-level `configs.py` overrides the corresponding global value.
+
+---
+
+## Pruning Datasets
+
+Sequences that have already been ingested can be removed from the Mosaico
+server without touching the local rosbag files. The CLI entry-point
+`mosaicolabs.datasets.delete_rosbags` mirrors the loader interface:
+
+```bash
+# Show all available options
+poetry run mosaicolabs.datasets.delete_rosbags --help
+
+# Prune a single dataset
+poetry run mosaicolabs.datasets.delete_rosbags --datasets autoware
+poetry run mosaicolabs.datasets.delete_rosbags --datasets sugarbeets
+poetry run mosaicolabs.datasets.delete_rosbags --datasets uzh_fpv
+
+# Prune multiple datasets in one go
+poetry run mosaicolabs.datasets.delete_rosbags --datasets autoware --datasets sugarbeets
+
+# Prune all datasets
+poetry run mosaicolabs.datasets.delete_rosbags --all
+```
+
+Use `--n_bags` to limit how many sequences are pruned per dataset — useful
+when you only want to free up a portion of the loaded data:
+
+```bash
+poetry run mosaicolabs.datasets.delete_rosbags --datasets autoware --n_bags 3
+```
+
+The command connects to the Mosaico instance configured in the dataset's
+`configs.py`, lists all sequences currently loaded on the server, and deletes
+only the ones whose names match rosbag files found under `PATH_TO_BAGS`.
+Sequences that belong to other datasets are never touched.
 
 ---
 
@@ -221,5 +258,5 @@ with resume support and a success/failure summary.
 poetry run mosaicolabs.datasets.injest_rosbags --help
 
 # Smoke-test with a single bag
-poetry run mosaicolabs.datasets.injest_rosbags --dataset mydataset --n_bags_to_load 1
+poetry run mosaicolabs.datasets.injest_rosbags --dataset mydataset --n_bags 1
 ```
