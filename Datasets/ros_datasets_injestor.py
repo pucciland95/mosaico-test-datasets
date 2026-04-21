@@ -2,29 +2,21 @@
 ROS Datasets Injector for the Mosaico platform.
 
 This module provides the ``RosDatasetsInjestor`` class, which automates the
-discovery and ingestion of ROS bag files into the Mosaico platform. It scans
+discovery, ingestion and deletion of ROS bag files into the Mosaico platform. It scans
 a base directory for dataset folders (each identified by a ``configs.py``
 file), loads per-dataset configuration with optional overrides on top of
 global defaults, and sequentially injects every rosbag it finds into the
 configured Mosaico instance via the ``RosbagInjector`` SDK component.
-
-Typical usage::
-
-    injestor = RosDatasetsInjestor()          # discover all datasets
-    injestor.load_datasets()                  # ingest all discovered bags
-
-    # or limit to specific datasets by folder name:
-    injestor = RosDatasetsInjestor(["dataset_a", "dataset_b"])
-    injestor.load_datasets()
 """
 
 # Mosaico SDK Imports
-from mosaicolabs import Time, SessionLevelErrorPolicy, MosaicoClient
+from mosaicolabs import SessionLevelErrorPolicy, MosaicoClient
 from mosaicolabs.ros_bridge import RosbagInjector, ROSInjectionConfig
 from mosaicolabs.ros_bridge.loader import ROSLoader
 
 from pathlib import Path
 from typing import Optional
+import json
 
 from rich.console import Console
 from rich.panel import Panel
@@ -57,29 +49,8 @@ class RosDatasetsInjestor:
         "TLS_CERT_PATH",
     ]
 
-    def __init__(
-        self,
-        datasets_name_to_load: Optional[list[str]] = None,
-        n_bags_to_load: Optional[int] = None,
-    ):
-        """Initialise the injector, discover datasets, and load global config.
-
-        Args:
-            datasets_name_to_load (list[str] | None): Optional whitelist of
-                dataset folder names to process.  When ``None`` (default) all
-                discovered datasets are loaded.
-            n_bags_to_load (int | None): Optional number stating how many rosbags
-            should be uploaded for each dataset. When ``None``, all rosbags
-            for each dataset are loaded.
-        """
-
-        self.n_bags_to_load_ = n_bags_to_load
-
-        abs_path_to_this_file = Path(__file__).resolve().parent
-
-        self.dataset_to_load_paths_ = self._discover_datasets(
-            abs_path_to_this_file, datasets_name_to_load
-        )
+    def __init__(self):
+        """Initialise the injector loading global config."""
 
         self.global_configs_: dict[str, str] = {}
         self.global_configs_ = self._load_dataset_config()
@@ -196,17 +167,114 @@ class RosDatasetsInjestor:
 
         return config
 
+    def _get_metadata(self, dataset_path: Path, rosbag_name: str) -> Optional[dict]:
+
+        # Find requested metadata associated to rosbag name
+        path_to_dataset_metadata = dataset_path / "metadata"
+
+        rosbag_metadata_path = next(
+            (
+                mtp
+                for mtp in path_to_dataset_metadata.glob("*.json")
+                if mtp.name.removesuffix(".json") == rosbag_name
+            ),
+            None,
+        )
+
+        if rosbag_metadata_path is None or rosbag_metadata_path.exists() is False:
+            console.print(
+                f"Impossible to find metadata for {rosbag_name} in {path_to_dataset_metadata}"
+            )
+            return None
+
+        with open(rosbag_metadata_path) as f:
+            return json.load(f)
+
     def _get_name_from_rosbag(self, rosbag_path: Path) -> str:
         return rosbag_path.with_suffix("").name
 
-    def load_datasets(self) -> None:
+    def delete_datasets(
+        self,
+        dataset_to_delete_name: list[str],
+        n_bags_to_delete: Optional[int] = None,
+    ):
+
+        abs_path_to_this_file = Path(__file__).resolve().parent
+
+        dataset_to_delete_paths_ = self._discover_datasets(
+            abs_path_to_this_file, dataset_to_delete_name
+        )
+
+        if not dataset_to_delete_paths_:
+            console.print(
+                f"[bold red] Impossible to delete {dataset_to_delete_name}. These are not valid dataset names[/bold red]"
+            )
+
+        for dt_path in dataset_to_delete_paths_:
+            configs = self._load_dataset_config(dt_path)
+
+            if configs is None:
+                console.print(
+                    f"[bold red]Failed loading dataset {dt_path}. Are you sure there is a config.py file? [/bold red]"
+                )
+                continue
+
+            # Sequence names coincide with rosbag names
+            rosbag_names_to_delete = [
+                self._get_name_from_rosbag(bp)
+                for ext in ROSLoader.ACCEPTED_EXTENSIONS
+                for bp in Path(configs["PATH_TO_BAGS"]).rglob(f"*{ext}")
+            ]
+
+            with MosaicoClient.connect(
+                host=configs["MOSAICO_HOST"],
+                port=configs["MOSAICO_PORT"],
+                api_key=configs["API_KEY"],
+                enable_tls=configs["ENABLE_TLS"],
+            ) as client:
+                all_loaded_sequences = client.list_sequences()
+
+                sequences_to_delete = list(
+                    set(all_loaded_sequences) & set(rosbag_names_to_delete)
+                )
+
+                if n_bags_to_delete is not None:
+                    sequences_to_delete = sequences_to_delete[:n_bags_to_delete]
+
+                console.print(
+                    f"[bold]Deleting {len(sequences_to_delete)} sequences [/bold]"
+                )
+
+                for seq in sequences_to_delete:
+                    console.print(f"[bold]Deleting loaded sequence {seq} [/bold]")
+                    client.sequence_delete(seq)
+
+    def load_datasets(
+        self,
+        datasets_name_to_load: Optional[list[str]] = None,
+        n_bags_to_load: Optional[int] = None,
+    ) -> None:
         """Ingest all discovered datasets into Mosaico.
+
+        Args:
+            datasets_name_to_load (list[str] | None): Optional whitelist of
+                dataset folder names to process.  When ``None`` (default) all
+                discovered datasets are loaded.
+            n_bags_to_load (int | None): Optional number stating how many rosbags
+            should be uploaded for each dataset. When ``None``, all rosbags
+            for each dataset are loaded.
 
         Returns:
             None
         """
 
-        for dataset_path in self.dataset_to_load_paths_:
+        abs_path_to_this_file = Path(__file__).resolve().parent
+
+        dataset_to_load_paths_ = self._discover_datasets(
+            abs_path_to_this_file, datasets_name_to_load
+        )
+
+        for dataset_path in dataset_to_load_paths_:
             console.print(
                 Panel(
                     f"[bold green] Started loading datasets {dataset_path.name} [/bold green]"
@@ -251,8 +319,8 @@ class RosDatasetsInjestor:
                 if self._get_name_from_rosbag(bag_pt) not in all_loaded_sequences
             ]
 
-            if self.n_bags_to_load_ is not None:
-                filtered_rosbags = filtered_rosbags[: self.n_bags_to_load_]
+            if n_bags_to_load is not None:
+                filtered_rosbags = filtered_rosbags[:n_bags_to_load]
 
             console.print(
                 f"[bold green]Loading {len(filtered_rosbags)} from {len(ros_bag_paths)} found bags from {configs['PATH_TO_BAGS']} [/bold green]"
@@ -272,10 +340,7 @@ class RosDatasetsInjestor:
                 injestor_config = ROSInjectionConfig(
                     file_path=bag_path,
                     sequence_name=sequence_name,
-                    metadata={
-                        "name": sequence_name,
-                        "downloaded_time_ns": Time.now().to_nanoseconds(),
-                    },
+                    metadata=self._get_metadata(dataset_path, sequence_name) or {},
                     host=configs["MOSAICO_HOST"],
                     port=configs["MOSAICO_PORT"],
                     log_level="WARNING",
