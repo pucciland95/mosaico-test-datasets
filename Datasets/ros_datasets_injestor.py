@@ -2,7 +2,7 @@
 ROS Datasets Injector for the Mosaico platform.
 
 This module provides the ``RosDatasetsInjestor`` class, which automates the
-discovery, ingestion and deletion of ROS bag files into the Mosaico platform. It scans
+discovery, ingestion and pruning of ROS bag files into the Mosaico platform. It scans
 a base directory for dataset folders (each identified by a ``configs.py``
 file), loads per-dataset configuration with optional overrides on top of
 global defaults, and sequentially injects every rosbag it finds into the
@@ -193,24 +193,24 @@ class RosDatasetsInjestor:
     def _get_name_from_rosbag(self, rosbag_path: Path) -> str:
         return rosbag_path.with_suffix("").name
 
-    def delete_datasets(
+    def prune_datasets(
         self,
-        dataset_to_delete_name: list[str],
-        n_bags_to_delete: Optional[int] = None,
+        dataset_to_prune_name: list[str],
+        n_bags_to_prune: Optional[int] = None,
     ):
 
         abs_path_to_this_file = Path(__file__).resolve().parent
 
-        dataset_to_delete_paths_ = self._discover_datasets(
-            abs_path_to_this_file, dataset_to_delete_name
+        dataset_to_prune_paths_ = self._discover_datasets(
+            abs_path_to_this_file, dataset_to_prune_name
         )
 
-        if not dataset_to_delete_paths_:
+        if not dataset_to_prune_paths_:
             console.print(
-                f"[bold red] Impossible to delete {dataset_to_delete_name}. These are not valid dataset names[/bold red]"
+                f"[bold red] Impossible to prune {dataset_to_prune_name}. These are not valid dataset names[/bold red]"
             )
 
-        for dt_path in dataset_to_delete_paths_:
+        for dt_path in dataset_to_prune_paths_:
             configs = self._load_dataset_config(dt_path)
 
             if configs is None:
@@ -220,7 +220,7 @@ class RosDatasetsInjestor:
                 continue
 
             # Sequence names coincide with rosbag names
-            rosbag_names_to_delete = [
+            rosbag_names_to_prune = [
                 self._get_name_from_rosbag(bp)
                 for ext in ROSLoader.ACCEPTED_EXTENSIONS
                 for bp in Path(configs["PATH_TO_BAGS"]).rglob(f"*{ext}")
@@ -234,19 +234,19 @@ class RosDatasetsInjestor:
             ) as client:
                 all_loaded_sequences = client.list_sequences()
 
-                sequences_to_delete = list(
-                    set(all_loaded_sequences) & set(rosbag_names_to_delete)
+                sequences_to_prune = list(
+                    set(all_loaded_sequences) & set(rosbag_names_to_prune)
                 )
 
-                if n_bags_to_delete is not None:
-                    sequences_to_delete = sequences_to_delete[:n_bags_to_delete]
+                if n_bags_to_prune is not None:
+                    sequences_to_prune = sequences_to_prune[:n_bags_to_prune]
 
                 console.print(
-                    f"[bold]Deleting {len(sequences_to_delete)} sequences [/bold]"
+                    f"[bold]Pruning {len(sequences_to_prune)} sequences [/bold]"
                 )
 
-                for seq in sequences_to_delete:
-                    console.print(f"[bold]Deleting loaded sequence {seq} [/bold]")
+                for seq in sequences_to_prune:
+                    console.print(f"[bold]Pruning loaded sequence {seq} [/bold]")
                     client.sequence_delete(seq)
 
     def load_datasets(

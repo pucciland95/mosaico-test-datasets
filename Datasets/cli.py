@@ -75,7 +75,7 @@ def run_dataset_injestor(datasets, all, n_bags):
 )
 def run_dataset_eraser(datasets, all, n_bags):
     """
-    Mosaico dataset deleter Runner
+    Mosaico dataset Pruning Runner
 
     This utility allows you to start rosbags dataset injestion
     """
@@ -93,12 +93,12 @@ def run_dataset_eraser(datasets, all, n_bags):
         sys.exit(0)
 
     click.secho(
-        f"Requested injestion of {datasets} dataset(s)", fg="cyan", bold=True
+        f"Requested pruning of {datasets} dataset(s)", fg="cyan", bold=True
     )
 
     try:
         injestor = RosDatasetsInjestor()
-        injestor.delete_datasets(datasets, n_bags)
+        injestor.prune_datasets(datasets, n_bags)
     
     except Exception as e:
         click.secho(f"\nExecution failed: {e}", fg="red", bold=True)
