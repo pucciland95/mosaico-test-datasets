@@ -1,0 +1,12 @@
+{
+  "filename": "outdoor_forward_3_davis_with_gt",
+  "section": "Outdoor forward facing",
+  "sensor": "DAVIS",
+  "duration_s": 92.84,
+  "length_m": 735.51,
+  "vmax_ms": 14.04,
+  "ground_truth_public": "yes",
+  "difficulty": "Medium",
+  "size": "1.1GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/outdoor_forward_3_davis_with_gt.bag"
+}

@@ -1,0 +1,12 @@
+{
+  "filename": "indoor_45_11_davis",
+  "section": "Indoor 45 degree downward facing",
+  "sensor": "DAVIS",
+  "duration_s": 22.96,
+  "length_m": 125.21,
+  "vmax_ms": 11.74,
+  "ground_truth_public": "no",
+  "difficulty": "N/A",
+  "size": "949.6MB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/indoor_45_11_davis.bag"
+}

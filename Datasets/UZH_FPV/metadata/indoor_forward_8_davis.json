@@ -1,0 +1,12 @@
+{
+  "filename": "indoor_forward_8_davis",
+  "section": "Indoor forward facing",
+  "sensor": "DAVIS",
+  "duration_s": 132.53,
+  "length_m": 259.16,
+  "vmax_ms": 5.26,
+  "ground_truth_public": "no",
+  "difficulty": "N/A",
+  "size": "1.4GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/indoor_forward_8_davis.bag"
+}

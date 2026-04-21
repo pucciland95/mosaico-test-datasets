@@ -1,0 +1,12 @@
+{
+  "filename": "outdoor_forward_1_snapdragon_with_gt",
+  "section": "Outdoor forward facing",
+  "sensor": "Snapdragon",
+  "duration_s": 49.63,
+  "length_m": 258.23,
+  "vmax_ms": 8.55,
+  "ground_truth_public": "yes",
+  "difficulty": "Easy",
+  "size": "1.5GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/outdoor_forward_1_snapdragon_with_gt.bag"
+}

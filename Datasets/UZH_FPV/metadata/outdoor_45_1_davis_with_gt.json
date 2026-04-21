@@ -1,0 +1,12 @@
+{
+  "filename": "outdoor_45_1_davis_with_gt",
+  "section": "Outdoor 45 degree downward facing",
+  "sensor": "DAVIS",
+  "duration_s": 24.49,
+  "length_m": 165.53,
+  "vmax_ms": 15.62,
+  "ground_truth_public": "yes",
+  "difficulty": "Medium",
+  "size": "1.3GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/outdoor_45_1_davis_with_gt.bag"
+}

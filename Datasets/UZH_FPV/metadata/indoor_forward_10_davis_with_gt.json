@@ -1,0 +1,12 @@
+{
+  "filename": "indoor_forward_10_davis_with_gt",
+  "section": "Indoor forward facing",
+  "sensor": "DAVIS",
+  "duration_s": 33.43,
+  "length_m": 149.36,
+  "vmax_ms": 9.49,
+  "ground_truth_public": "yes",
+  "difficulty": "Easy",
+  "size": "643.7MB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/indoor_forward_10_davis_with_gt.bag"
+}

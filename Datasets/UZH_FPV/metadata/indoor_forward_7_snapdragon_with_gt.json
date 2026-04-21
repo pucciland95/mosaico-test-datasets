@@ -1,0 +1,12 @@
+{
+  "filename": "indoor_forward_7_snapdragon_with_gt",
+  "section": "Indoor forward facing",
+  "sensor": "Snapdragon",
+  "duration_s": 73.2,
+  "length_m": 333.59,
+  "vmax_ms": 12.78,
+  "ground_truth_public": "yes",
+  "difficulty": "Hard",
+  "size": "2GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/indoor_forward_7_snapdragon_with_gt.bag"
+}

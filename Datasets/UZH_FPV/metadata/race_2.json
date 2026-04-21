@@ -1,0 +1,12 @@
+{
+  "filename": "race_2",
+  "section": "SplitS Track",
+  "sensor": "Realsense T265",
+  "duration_s": 30.17,
+  "length_m": 246.38,
+  "vmax_ms": 25.9,
+  "ground_truth_public": "no",
+  "difficulty": "Very Hard",
+  "size": "596.7MB",
+  "url": "https://download.ifi.uzh.ch/rpg/drone_racing_data/race_2.bag"
+}

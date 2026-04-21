@@ -1,0 +1,12 @@
+{
+  "filename": "indoor_45_9_snapdragon_with_gt",
+  "section": "Indoor 45 degree downward facing",
+  "sensor": "Snapdragon",
+  "duration_s": 40.0,
+  "length_m": 215.58,
+  "vmax_ms": 11.23,
+  "ground_truth_public": "yes",
+  "difficulty": "Medium",
+  "size": "1.2GB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/indoor_45_9_snapdragon_with_gt.bag"
+}

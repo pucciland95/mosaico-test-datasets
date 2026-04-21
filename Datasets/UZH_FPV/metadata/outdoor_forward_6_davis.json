@@ -1,0 +1,12 @@
+{
+  "filename": "outdoor_forward_6_davis",
+  "section": "Outdoor forward facing",
+  "sensor": "DAVIS",
+  "duration_s": 34.83,
+  "length_m": 338.2,
+  "vmax_ms": 19.42,
+  "ground_truth_public": "no",
+  "difficulty": "N/A",
+  "size": "786.5MB",
+  "url": "http://rpg.ifi.uzh.ch/datasets/uzh-fpv-newer-versions/v3/outdoor_forward_6_davis.bag"
+}
